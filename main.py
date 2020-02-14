@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, executor, types, exceptions
 from asyncio import sleep
 from peewee import *
 from playhouse.db_url import connect
-
+import time
 
 load_dotenv()
 bot = Bot(token=getenv('TG_TOKEN'))
@@ -15,8 +15,8 @@ db = connect(getenv('DATABASE_URL'))
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('broadcast')
 msg_counter = 0
+global MSG_PER_SECOND
 MSG_PER_SECOND = 5
-
 
 class User(Model):
     id = IntegerField(null=False, unique=True, primary_key=True)
@@ -63,10 +63,16 @@ async def send_message(user_id: int, text: str, disable_notif: bool=False):
 
 @dp.message_handler(commands=['flood']) # test sender
 async def flood(message: types.Message):
+    start = time.time()
     args = message.text.split()
-    if len(args) == 2 and args[1].isdigit():
+    if len(args) > 2 and args[2].isdigit():
+        MSG_PER_SECOND = args[2]
+    if len(args) >= 2 and args[1].isdigit():
         for i in range(int(args[1])):
             await send_message(message.from_user.id, str(i))
+    total_time = time.time() - start
+    print(f'Общее время: {total_time}')
+    print(f'Сообщений в секунду: {(int(args[1]))/total_time}')
 
 
 @dp.message_handler(commands=['sleep']) # TMP TEST
